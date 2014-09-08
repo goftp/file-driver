@@ -12,7 +12,27 @@ import (
 
 type FileDriver struct {
 	RootPath string
-	TmpDir   string
+	Perm     Perm
+}
+
+type FileInfo struct {
+	os.FileInfo
+
+	mode  os.FileMode
+	owner string
+	group string
+}
+
+func (f *FileInfo) Mode() os.FileMode {
+	return f.mode
+}
+
+func (f *FileInfo) Owner() string {
+	return f.owner
+}
+
+func (f *FileInfo) Group() string {
+	return f.group
 }
 
 func (driver *FileDriver) ChangeDir(path string) error {
@@ -27,22 +47,50 @@ func (driver *FileDriver) ChangeDir(path string) error {
 	return errors.New("Not a dir")
 }
 
-func (driver *FileDriver) Stat(path string) (os.FileInfo, error) {
+func (driver *FileDriver) Stat(path string) (server.FileInfo, error) {
 	basepath := filepath.Join(driver.RootPath, path)
 	rPath, err := filepath.Abs(basepath)
 	if err != nil {
 		return nil, err
 	}
-	return os.Lstat(rPath)
+	f, err := os.Lstat(rPath)
+	if err != nil {
+		return nil, err
+	}
+	mode, err := driver.Perm.GetMode(path)
+	if err != nil {
+		return nil, err
+	}
+	owner, err := driver.Perm.GetOwner(path)
+	if err != nil {
+		return nil, err
+	}
+	group, err := driver.Perm.GetGroup(path)
+	if err != nil {
+		return nil, err
+	}
+	return &FileInfo{f, mode, owner, group}, nil
 }
 
-func (driver *FileDriver) DirContents(path string) ([]os.FileInfo, error) {
-	files := make([]os.FileInfo, 0)
+func (driver *FileDriver) DirContents(path string) ([]server.FileInfo, error) {
+	files := make([]server.FileInfo, 0)
 	basepath := filepath.Join(driver.RootPath, path)
 	filepath.Walk(basepath, func(f string, info os.FileInfo, err error) error {
 		rPath, _ := filepath.Rel(basepath, f)
 		if rPath == info.Name() {
-			files = append(files, info)
+			mode, err := driver.Perm.GetMode(rPath)
+			if err != nil {
+				return err
+			}
+			owner, err := driver.Perm.GetOwner(rPath)
+			if err != nil {
+				return err
+			}
+			group, err := driver.Perm.GetGroup(rPath)
+			if err != nil {
+				return err
+			}
+			files = append(files, &FileInfo{info, mode, owner, group})
 		}
 		return nil
 	})
@@ -119,8 +167,6 @@ func (driver *FileDriver) PutFile(destPath string, data io.Reader, appendData bo
 		}
 	}
 
-	fmt.Println("is append", appendData)
-
 	if !appendData {
 		if isExist {
 			err = os.Remove(rPath)
@@ -150,12 +196,10 @@ func (driver *FileDriver) PutFile(destPath string, data io.Reader, appendData bo
 	}
 	defer of.Close()
 
-	cur, err := of.Seek(0, os.SEEK_END)
+	_, err = of.Seek(0, os.SEEK_END)
 	if err != nil {
 		return 0, err
 	}
-
-	fmt.Println("cur pointer is", cur)
 
 	bytes, err := io.Copy(of, data)
 	if err != nil {
@@ -167,9 +211,9 @@ func (driver *FileDriver) PutFile(destPath string, data io.Reader, appendData bo
 
 type FileDriverFactory struct {
 	RootPath string
-	TmpDir   string
+	Perm     Perm
 }
 
 func (factory *FileDriverFactory) NewDriver() (server.Driver, error) {
-	return &FileDriver{factory.RootPath, factory.TmpDir}, nil
+	return &FileDriver{factory.RootPath, factory.Perm}, nil
 }
