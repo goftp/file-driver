@@ -12,7 +12,7 @@ import (
 
 type FileDriver struct {
 	RootPath string
-	Perm     Perm
+	server.Perm
 }
 
 type FileInfo struct {
@@ -211,7 +211,7 @@ func (driver *FileDriver) PutFile(destPath string, data io.Reader, appendData bo
 
 type FileDriverFactory struct {
 	RootPath string
-	Perm     Perm
+	server.Perm
 }
 
 func (factory *FileDriverFactory) NewDriver() (server.Driver, error) {
