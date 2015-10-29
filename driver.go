@@ -61,6 +61,9 @@ func (driver *FileDriver) Stat(path string) (server.FileInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	if f.IsDir() {
+		mode |= os.ModeDir
+	}
 	owner, err := driver.Perm.GetOwner(path)
 	if err != nil {
 		return nil, err
@@ -81,6 +84,9 @@ func (driver *FileDriver) DirContents(path string) ([]server.FileInfo, error) {
 			mode, err := driver.Perm.GetMode(rPath)
 			if err != nil {
 				return err
+			}
+			if info.IsDir() {
+				mode |= os.ModeDir
 			}
 			owner, err := driver.Perm.GetOwner(rPath)
 			if err != nil {
