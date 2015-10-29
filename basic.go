@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -52,16 +53,16 @@ func (driver *BasicFileDriver) Stat(path string) (server.FileInfo, error) {
 }
 
 func (driver *BasicFileDriver) DirContents(path string) ([]server.FileInfo, error) {
-	files := make([]server.FileInfo, 0)
 	basepath := filepath.Join(driver.RootPath, path)
-	filepath.Walk(basepath, func(f string, info os.FileInfo, err error) error {
-		rPath, _ := filepath.Rel(basepath, f)
-		if rPath == info.Name() {
-			files = append(files, &BasicFileInfo{info})
-		}
-		return nil
-	})
+	fis, err := ioutil.ReadDir(basepath)
+	if err != nil {
+		return nil, err
+	}
 
+	files := make([]server.FileInfo, 0)
+	for _, finfo := range fis {
+		files = append(files, &BasicFileInfo{finfo})
+	}
 	return files, nil
 }
 
