@@ -44,7 +44,7 @@ func (driver *FileDriver) ChangeDir(path string) error {
 	if f.IsDir() {
 		return nil
 	}
-	return errors.New("Not a dir")
+	return errors.New("Not a directory")
 }
 
 func (driver *FileDriver) Stat(path string) (server.FileInfo, error) {
