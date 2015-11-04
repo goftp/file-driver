@@ -75,8 +75,7 @@ func (driver *FileDriver) Stat(path string) (server.FileInfo, error) {
 	return &FileInfo{f, mode, owner, group}, nil
 }
 
-func (driver *FileDriver) DirContents(path string) ([]server.FileInfo, error) {
-	files := make([]server.FileInfo, 0)
+func (driver *FileDriver) ListDir(path string, callback func(server.FileInfo) error) error {
 	basepath := filepath.Join(driver.RootPath, path)
 	filepath.Walk(basepath, func(f string, info os.FileInfo, err error) error {
 		rPath, _ := filepath.Rel(basepath, f)
@@ -96,12 +95,15 @@ func (driver *FileDriver) DirContents(path string) ([]server.FileInfo, error) {
 			if err != nil {
 				return err
 			}
-			files = append(files, &FileInfo{info, mode, owner, group})
+			err = callback(&FileInfo{info, mode, owner, group})
+			if err != nil {
+				return err
+			}
 		}
 		return nil
 	})
 
-	return files, nil
+	return nil
 }
 
 func (driver *FileDriver) DeleteDir(path string) error {
