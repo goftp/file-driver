@@ -41,6 +41,10 @@ func (driver *FileDriver) realPath(path string) string {
 	return filepath.Join(append([]string{driver.RootPath}, paths...)...)
 }
 
+func (driver *FileDriver) Init(conn *server.Conn) {
+	//driver.conn = conn
+}
+
 func (driver *FileDriver) ChangeDir(path string) error {
 	rPath := driver.realPath(path)
 	f, err := os.Lstat(rPath)
