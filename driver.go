@@ -185,6 +185,10 @@ func (driver *FileDriver) PutFile(destPath string, data io.Reader, appendData bo
 		}
 	}
 
+	if appendData && !isExist {
+		appendData = false
+	}
+
 	if !appendData {
 		if isExist {
 			err = os.Remove(rPath)
@@ -202,10 +206,6 @@ func (driver *FileDriver) PutFile(destPath string, data io.Reader, appendData bo
 			return 0, err
 		}
 		return bytes, nil
-	}
-
-	if !isExist {
-		return 0, errors.New("Append data but file not exsit")
 	}
 
 	of, err := os.OpenFile(rPath, os.O_APPEND|os.O_RDWR, 0660)
