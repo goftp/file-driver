@@ -109,6 +109,9 @@ func (driver *FileDriver) ListDir(path string, callback func(server.FileInfo) er
 			if err != nil {
 				return err
 			}
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
 		}
 		return nil
 	})
@@ -148,7 +151,7 @@ func (driver *FileDriver) Rename(fromPath string, toPath string) error {
 
 func (driver *FileDriver) MakeDir(path string) error {
 	rPath := driver.realPath(path)
-	return os.Mkdir(rPath, os.ModePerm)
+	return os.MkdirAll(rPath, os.ModePerm)
 }
 
 func (driver *FileDriver) GetFile(path string, offset int64) (int64, io.ReadCloser, error) {
