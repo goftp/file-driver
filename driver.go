@@ -87,7 +87,10 @@ func (driver *FileDriver) Stat(path string) (server.FileInfo, error) {
 
 func (driver *FileDriver) ListDir(path string, callback func(server.FileInfo) error) error {
 	basepath := driver.realPath(path)
-	filepath.Walk(basepath, func(f string, info os.FileInfo, err error) error {
+	return filepath.Walk(basepath, func(f string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		rPath, _ := filepath.Rel(basepath, f)
 		if rPath == info.Name() {
 			mode, err := driver.Perm.GetMode(rPath)
@@ -112,8 +115,6 @@ func (driver *FileDriver) ListDir(path string, callback func(server.FileInfo) er
 		}
 		return nil
 	})
-
-	return nil
 }
 
 func (driver *FileDriver) DeleteDir(path string) error {
